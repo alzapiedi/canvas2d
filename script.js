@@ -221,45 +221,56 @@ class Wall {
 
 class World {
   constructor(player) {
-    this.objects = [];
-    this.walls = [];
+    this._objects = [];
+    this._walls = [];
     this.player = player;
   }
 
   addObject(object) {
-    this.objects.push(object);
+    this._objects.push(object);
   }
 
   addWall(wall) {
-    this.walls.push(wall);
+    this._walls.push(wall);
   }
 
-  updateAndDrawObjects(ctx, camera, timeDelta) {
-    this.objects.concat(this.player).forEach(object => {
-      if (object.step) {
-        this.walls.forEach(wall => {
-          if (wall.isIntersecting(object)) {
-            object.setBlockedDirectionsByPoint(wall.getObjectIntersectionPoint(object));
-          }
-          wall.resetIntersectionPoints();
-        });
-        this.objects.forEach(otherObject => {
-          object.setBlockedDirectionsByObject(otherObject);
-        });
-        object.step(timeDelta);
-      }
-      object.draw(ctx, camera);
-    });
+  update(ctx, camera, timeDelta) {
+    this.updateMovingObjects(timeDelta);
+    this.draw(ctx, camera);
   }
 
-  drawWalls(ctx, camera) {
-    this.walls.forEach(wall => wall.draw(ctx, camera));
+  updateMovingObjects(timeDelta) {
+    this.movingObjects.forEach(object => {
+      this.walls.filter(wall => wall.isIntersecting(object)).forEach(wall => object.setBlockedDirectionsByPoint(wall.getObjectIntersectionPoint(object)));
+      this.objects.forEach(otherObject => object.setBlockedDirectionsByObject(otherObject))
+      object.step(timeDelta);
+    })
+  }
+
+  draw(ctx, camera) {
+    this.objectsToRender.forEach(object => object.draw(ctx, camera))
   }
 
   buildWallsFromArray(arr) {
     arr.forEach(points => {
       this.addWall(new Wall({ startX: points[0][0], startY: points[0][1], finishX: points[1][0], finishY: points[1][1] }));
     });
+  }
+
+  get objects() {
+    return this._objects;
+  }
+
+  get movingObjects() {
+    return this._objects.filter(object => object instanceof MovingObject).concat(this.player);
+  }
+
+  get objectsToRender() {
+    return this._objects.concat(this._walls).concat(this.player);
+  }
+
+  get walls() {
+    return this._walls;
   }
 }
 
@@ -282,8 +293,7 @@ class WorldView {
     this.lastTime = time;
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     if (this.camera) this.camera.update(this.world.player);
-    this.world.drawWalls(this.ctx, this.camera);
-    this.world.updateAndDrawObjects(this.ctx, this.camera, timeDelta);
+    this.world.update(this.ctx, this.camera, timeDelta);
     requestAnimationFrame(this.animate);
   }
 }
