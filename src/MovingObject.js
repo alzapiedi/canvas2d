@@ -1,7 +1,7 @@
 import { setAttributes } from 'tools/object';
-import CanvasObject from 'CanvasObject';
+import BaseObject from 'BaseObject';
 
-export default class MovingObject extends CanvasObject {
+export default class MovingObject extends BaseObject {
   constructor(options) {
     super(options);
     setAttributes(this, options, ['vx', 'vy']);

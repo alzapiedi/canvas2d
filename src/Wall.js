@@ -1,6 +1,6 @@
 import { WALL_THICKNESS } from 'config/wall';
 import { setAttributes } from 'tools/object';
-import CanvasObject from 'CanvasObject';
+import BaseObject from 'BaseObject';
 
 export default class Wall {
   constructor(options) {
@@ -35,7 +35,7 @@ export default class Wall {
   }
 
   isInCamera(camera) {
-    return this.isIntersecting(new CanvasObject({
+    return this.isIntersecting(new BaseObject({
       x: camera.xMin,
       y: camera.yMin,
       width: camera.xMax - camera.xMin,

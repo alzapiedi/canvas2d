@@ -1,15 +1,15 @@
 import { setAttributes } from 'tools/object';
 
-export default class CanvasObject {
+export default class BaseObject {
   static lastID = 0;
 
   static nextID = function() {
-    return ++CanvasObject.lastID;
+    return ++BaseObject.lastID;
   }
 
   constructor(options) {
     setAttributes(this, options, ['x', 'y', 'width', 'height']);
-    this.id = CanvasObject.nextID();
+    this.id = BaseObject.nextID();
   }
 
   draw(ctx, camera) {

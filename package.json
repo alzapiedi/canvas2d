@@ -4,18 +4,18 @@
   "description": "",
   "main": "script.js",
   "scripts": {
-    "start": "webpack --watch"
+    "start": "webpack --watch",
+    "clean": "rm app.js && rm app.js.map && rm -rf node_modules"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.0",
-    "babel-loader": "^7.1.2",
-    "babel-preset-env": "^1.6.1",
-    "babel-preset-node6": "^11.0.0",
-    "babel-preset-stage-2": "^6.24.1",
-    "webpack": "^3.9.1"
+    "babel-core": "6.26.0",
+    "babel-loader": "7.1.2",
+    "babel-preset-env": "1.6.1",
+    "babel-preset-node6": "11.0.0",
+    "babel-preset-stage-2": "6.24.1",
+    "webpack": "3.9.1"
   }
 }
