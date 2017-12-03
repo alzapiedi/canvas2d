@@ -38,10 +38,6 @@ class CanvasObject {
     return this.x - this.width >= camera.xMin && this.x <= camera.xMax && this.y - this.height >= camera.yMin && this.y <= camera.yMax;
   }
 
-  isIntersecting(object) {
-    return !(this.x + this.width < object.x || this.x > object.x + object.width || this.y + this.height < object.y || this.y > object.y + object.height);
-  }
-
   getPositionInCamera(camera) {
     if (!this.isInCamera(camera)) throw new Error('Object is out of camera view');
     return { x: this.x - camera.xMin, y: this.y - camera.yMin };
@@ -57,15 +53,35 @@ class MovingObject extends CanvasObject {
     super(options);
     this.vx = options.vx;
     this.vy = options.vy;
+
+    this.blockedDirections = {};
   }
 
-  step(timeDelta, dir = 1) {
-    this.x = dir ? this.x + this.vx * timeDelta : this.x - this.vx * timeDelta;
-    this.y = dir ? this.y + this.vy * timeDelta : this.y - this.vy * timeDelta;
+  step(timeDelta) {
+    if (this.vx > 0) this.x = this.blockedDirections.right ? this.x : this.x + this.vx * timeDelta;
+    if (this.vx < 0) this.x = this.blockedDirections.left ? this.x : this.x + this.vx * timeDelta;
+    if (this.vy > 0) this.y = this.blockedDirections.down ? this.y : this.y + this.vy * timeDelta;
+    if (this.vy < 0) this.y = this.blockedDirections.up ? this.y : this.y + this.vy * timeDelta;
+    this.blockedDirections = {};
   }
 
   getNextPosition(timeDelta) {
     return { x: this.x + this.vx * timeDelta, y: this.y + this.vy * timeDelta };
+  }
+
+  setBlockedDirectionsByPoint(intersectionPoint) {
+    if (Math.abs(intersectionPoint.x - 5 < this.x) && this.vx <= 0) this.blockedDirections.left = true;
+    if (Math.abs(intersectionPoint.x + 5 > this.x + this.width) && this.vx >= 0) this.blockedDirections.right = true;
+    if (Math.abs(intersectionPoint.y - 5 < this.y) && this.vy <= 0) this.blockedDirections.up = true;
+    if (Math.abs(intersectionPoint.y + 5 > this.y + this.height) && this.vy >= 0) this.blockedDirections.down = true;
+  }
+
+  setBlockedDirectionsByObject(object) {
+    if (object.id === this.id) return;
+    if (Math.abs(object.x - (this.x + this.width)) < 5 && !(this.y + this.height < object.y || this.y > object.y + object.height)) this.blockedDirections.right = true;
+    if (Math.abs(object.x + object.width - this.x) < 5 && !(this.y + this.height < object.y || this.y > object.y + object.height)) this.blockedDirections.left = true;
+    if (Math.abs(object.y - (this.y + this.height)) < 5 && !(this.x + this.width < object.x || this.x > object.x + object.width)) this.blockedDirections.down = true;
+    if (Math.abs(object.y + object.height - this.y) < 5 && !(this.x + this.width < object.x || this.x > object.x + object.width)) this.blockedDirections.up = true;
   }
 }
 
@@ -133,6 +149,7 @@ class Wall {
     this.start = { x: options.startX, y: options.startY };
     this.finish = { x: options.finishX, y: options.finishY };
     this.thickness = WALL_THICKNESS;
+    this.intersectionPoints = {};
   }
 
   draw(ctx, camera) {
@@ -175,8 +192,12 @@ class Wall {
     if (object.y + object.height < this.start.y && object.y + object.height < this.finish.y) return false;
     if (object.y > this.start.y && object.y > this.finish.y) return false;
     for (let x = this.start.x; this.start.x < this.finish.x ? x <= this.finish.x : x >= this.finish.x; this.start.x > this.finish.x ? x-- : x++) {
-      if (object.containsPoint({ x, y: this.m * x + this.b })) return true;
+      if (object.containsPoint({ x, y: this.m * x + this.b })) {
+        this.intersectionPoints[object.id] = { x: this.m === 0 ? x + object.width / 2 : x, y: this.m * x + this.b };
+        return true;
+      }
     }
+    this.intersectionPoints[object.id] = undefined;
     return false;
   }
 
@@ -186,6 +207,15 @@ class Wall {
       start: { x: this.start.x - camera.xMin, y: this.start.y - camera.yMin },
       finish: { x: this.finish.x - camera.xMin, y: this.finish.y - camera.yMin }
     };
+  }
+
+  getObjectIntersectionPoint(object) {
+    if (!this.intersectionPoints[object.id]) throw new Error('Object is not intersecting wall');
+    return this.intersectionPoints[object.id];
+  }
+
+  resetIntersectionPoints() {
+    this.intersectionPoints = {};
   }
 }
 
@@ -207,8 +237,16 @@ class World {
   updateAndDrawObjects(ctx, camera, timeDelta) {
     this.objects.concat(this.player).forEach(object => {
       if (object.step) {
+        this.walls.forEach(wall => {
+          if (wall.isIntersecting(object)) {
+            object.setBlockedDirectionsByPoint(wall.getObjectIntersectionPoint(object));
+          }
+          wall.resetIntersectionPoints();
+        });
+        this.objects.forEach(otherObject => {
+          object.setBlockedDirectionsByObject(otherObject);
+        });
         object.step(timeDelta);
-        if (this.walls.some(wall => wall.isIntersecting(object)) || this.objects.some(otherObject => object.isIntersecting(otherObject) && object.id !== otherObject.id)) object.step(timeDelta, 0);
       }
       object.draw(ctx, camera);
     });
