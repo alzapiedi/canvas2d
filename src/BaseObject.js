@@ -1,4 +1,5 @@
 import { setAttributes } from 'tools/object';
+import { objectContainsPoint } from 'tools/math';
 
 export default class BaseObject {
   static lastID = 0;
@@ -24,7 +25,7 @@ export default class BaseObject {
   }
 
   containsPoint(point) {
-    return !(point.x > this.x + this.width || point.x < this.x || point.y > this.y + this.height || point.y < this.y);
+    return objectContainsPoint(this, point);
   }
 
   isInCamera(camera) {

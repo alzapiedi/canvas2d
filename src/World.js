@@ -27,14 +27,18 @@ export default class World {
 
   updateMovingObjects(timeDelta) {
     this.movingObjects.forEach(object => {
-      this.walls.filter(wall => wall.isIntersecting(object)).forEach(wall => object.setBlockedDirectionsByPoint(wall.getObjectIntersectionPoint(object)));
+      this.walls.filter(wall => wall.isIntersecting(object)).forEach(wall => this.handleWallIntersection(object, wall));
       this.objects.forEach(otherObject => object.setBlockedDirectionsByObject(otherObject));
       object.step(timeDelta);
     });
   }
 
+  handleWallIntersection(object, wall) {
+    object.setBlockedDirectionsByPoint(wall.getObjectIntersectionPoint(object));
+  }
+
   draw(ctx, camera) {
-    this.objectsToRender.forEach(object => object.draw(ctx, camera));
+    this.objectsToRender.forEach(object => object.draw && object.draw(ctx, camera));
   }
 
   buildWallsFromArray(arr) {
@@ -52,7 +56,7 @@ export default class World {
   }
 
   get objectsToRender() {
-    return this.player ? this._objects.concat(this._walls).concat(this.player) : this._objects.concat(this._walls);
+    return this._objects.concat(this.walls).concat(this.player)
   }
 
   get walls() {
