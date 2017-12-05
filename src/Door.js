@@ -10,4 +10,8 @@ export default class Door {
   swing(degrees) {
     this.rTarget = degrees * Math.PI / 180;
   }
+
+  setEndpoint(point) {
+    this.endpoint = point;
+  }
 }

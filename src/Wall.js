@@ -14,7 +14,8 @@ export default class Wall {
 
   draw(ctx, camera) {
     if (this.wallSections.length === 0) return this.drawWallSection(this, ctx, camera);
-    this.wallSections.forEach(wallSection => this.drawWallSection(wallSection, ctx, camera))
+    this.wallSections.forEach(wallSection => this.drawWallSection(wallSection, ctx, camera));
+    this.doors.forEach(this.drawDoor);
   }
 
   drawWallSection(wall, ctx, camera) {
@@ -31,6 +32,10 @@ export default class Wall {
     }
     ctx.lineWidth = wall.thickness;
     ctx.stroke();
+  }
+
+  drawDoor = (door) => {
+
   }
 
   get m() {
@@ -95,7 +100,8 @@ export default class Wall {
     let finish, endpoint, previousDoorEndpoint;
     this.doors.sort((door1, door2) => door2.x < door1.x).forEach((door, idx) => {
       previousDoorEndpoint = endpoint
-      endpoint = calculateEndpoint({ x: door.x, y: door.y }, this.m, door.width);
+      endpoint = door.endpoint ? door.endpoint : calculateEndpoint({ x: door.x, y: door.y }, this.m, door.width);
+      door.setEndpoint(endpoint);
       if (idx === 0) return wallSections.push(new Wall({ start, finish: { x: door.x, y: door.y }, parent: this}));
       wallSections.push({ start: previousDoorEndpoint ? previousDoorEndpoint : endpoint, finish: { x: door.x, y: door.y }});
     });
